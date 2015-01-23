@@ -2,46 +2,55 @@
 A test app I have written to demonstrate how to use the cupboard SQLite helper for android
 
 Cupboard guide for CodePath
-                                                ## Overview
+## Overview
 
 Cupboard is a way to manage persistence in a sqlite instance for your app. It's a small library, simple to use, and it was designed specifically for Android unlike ORMlite.
 
-Using the ActiveAndroid ORM makes managing client-side models extremely easy in simple cases. For more advanced or custom cases, you can use [[SQLiteOpenHelper|Local-Databases-with-SQLiteOpenHelper]] to manage the database communication directly. But for simple model mapping from JSON, ActiveAndroid keeps things simple.  
+Using the Cupboard persistence library makes managing client-side models extremely easy in simple cases. For more advanced or custom cases, you can use [[SQLiteOpenHelper|Local-Databases-with-SQLiteOpenHelper]] to manage the database communication directly. However, keep in mind that Cupboard was written with the intention to abstract away a lot of boilerplate and reused code that would go into making SQLiteOpenHelper function. 
 
 <img src="include some picture here" width="500" alt="orm" />
 
-Note that while this library does not enforce the DOA model, we are going to leverage it regardless as it adds to overall code clarity. 
+<!-- Note that while this library does not enforce the DOA model, we are going to leverage it regardless as it adds to overall code clarity.  -->
 
 <!-- 
-ActiveAndroid works like an **Object Relational Mapper** by mapping java classes to database tables and mapping java class member variables to the table columns. Through this process, **each table** maps to a **Java model** and **the columns** in the table represent the respective **data fields**. Similarly, each row in the database represents a particular object. This allows us to create, modify, delete and query our SQLite database using model objects instead of raw SQL.
+Cupboard works like an **Object Relational Mapper** by mapping java classes to database tables and mapping java class member variables to the table columns. Through this process, **each table** maps to a **Java model** and **the columns** in the table represent the respective **data fields**. Similarly, each row in the database represents a particular object. This allows us to create, modify, delete and query our SQLite database using model objects instead of raw SQL.
 
 For example, a "Tweet" model would be mapped to a "tweets" table in the database. The Tweet model might have a "body" field that maps to a body column in the table and a "timestamp" field that maps to a timestamp column. Through this process, each row would map to a particular tweet. -->
 
 ### Installation
 
-To install Cupboar, simply add the line
+To install manually, you can [download the latest JAR file](https://search.maven.org/remote_content?g=nl.qbusict&a=cupboard&v=LATEST)
+
+To install Cupboard with Maven, simply add the line
+
+```xml
+<dependency>
+    <groupId>nl.qbusict</groupId>
+    <artifactId>cupboard</artifactId>
+    <version>(insert latest version)</version>
+</dependency>
+```
+
+To install Cupboard with Gradle, simply add the line
 
 ```groovy
-compile 'nl.qbusict:cupboard:{latest version number}'
+compile 'nl.qbusict:cupboard:(insert latest version)'
 ```
 
 to the dependencies section of your app's build.gradle file.
-Recompile your project, and you should be done. 
+
+You should now have ahold of the files you need for Cupboard.
 
 
-                                              ### Configuration
+### Configuration
 
 Next, we'll setup a custom SQLiteOpenHelper. This is a standard object in the Android framework that assists in dealing with SQLite databases. For now, we'll just create the object and register one POJO in our database: `Bunny`
 ```java
-package mikecanco.de.cupboardtest;
-
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import static nl.qbusict.cupboard.CupboardFactory.cupboard;
-/**
- * Created by koalahamlet on 1/20/15.
- */
+
 public class PracticeDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "cupboardTest.db";
@@ -60,7 +69,7 @@ public class PracticeDatabaseHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         // this will ensure that all tables are created
         cupboard().withDatabase(db).createTables();
-        // add indexes and other database tweaks if you want
+        // add indexes and other database tweaks in this method if you want
 
     }
 
@@ -69,15 +78,20 @@ public class PracticeDatabaseHelper extends SQLiteOpenHelper {
         // this will upgrade tables, adding columns and new tables.
         // Note that existing columns will not be converted
         cupboard().withDatabase(db).upgradeTables();
-        // do migration work
+        // do migration work if you have an alteration to make to your schema here
 
     }
 
 }
 
 ```
-                                                                                                                                                        
-**Note** that you must either directly use the `com.activeandroid.app.Application` as your application class (specified in the manifest) or if you have a custom application class, check out more details for how to approach that in the [installation guide](https://github.com/pardom/ActiveAndroid/wiki/Getting-started). Now you are ready to use ActiveAndroid. 
+
+After this, somewhere in your app where you want to use Cupboard, you will have to instantiate your DatabaseHelper. 
+```java
+PracticeDatabaseHelper dbHelper = new PracticeDatabaseHelper(this);
+db = dbHelper.getWritableDatabase();
+```
+Now, with your database instantiated, you are ready to use Cupboard. 
 
                                                 ### Usage
 
@@ -89,7 +103,7 @@ First, we define our models by...
 
 ```
 
-The "name" part of the annotations refers to the name the Table or Columns will be given, so make sure to use the SQLite naming conventions for those. Also note that **ActiveAndroid creates a local id (Id)** in addition to our manually managed `remoteId` (unique) which is the id on the server (for networked applications). To access that primary key Id, you can call `getId()` on an instance of your model.
+The "name" part of the annotations refers to the name the Table or Columns will be given, so make sure to use the SQLite naming conventions for those. Also note that **Cupboard creates a local id (Id)** in addition to our manually managed `remoteId` (unique) which is the id on the server (for networked applications). To access that primary key Id, you can call `getId()` on an instance of your model.
 
 #### CRUD Operations
 
@@ -126,7 +140,7 @@ We can query records with a simple query syntax `get` method....
 
 ```
 
-That's ActiveAndroid in a nutshell. 
+That's Cupboard in a nutshell. 
 
                             #### Executing Custom SQL
 
@@ -173,7 +187,7 @@ Note that in order trigger the migration script, you’ll have to save an instan
 
 #### Populating ListView with CursorAdapter
 
-Review this [[Custom CursorAdapter and ListViews|Populating a ListView with a CursorAdapter]] guide in order to load content from a `Cursor` into a `ListView`. In summary, in order to populate a `ListView` directly from the content within the ActiveAndroid SQLite database, we can define this method on the model to retrieve a `Cursor` for the result set:
+Review this [[Custom CursorAdapter and ListViews|Populating a ListView with a CursorAdapter]] guide in order to load content from a `Cursor` into a `ListView`. In summary, in order to populate a `ListView` directly from the content within the Cupboard SQLite database, we can define this method on the model to retrieve a `Cursor` for the result set:
 
 ```java
 public class TodoItem extends Model {
@@ -185,7 +199,7 @@ public class TodoItem extends Model {
         // Query all items without any conditions
         String resultRecords = new Select(tableName + ".*, " + tableName + ".Id as _id").
             from(TodoItem.class).toSql();
-        // Execute query on the underlying ActiveAndroid SQLite database
+        // Execute query on the underlying Cupboard SQLite database
         Cursor resultCursor = Cache.openDatabase().rawQuery(resultRecords, null);
         return resultCursor;
     }
@@ -207,11 +221,11 @@ Next, we can fetch the data cursor containing all todo items with `TodoItem.fetc
 
 ```
 
-That's all we have to do to load data from ActiveAndroid directly through a `Cursor` into a list.
+That's all we have to do to load data from Cupboard directly through a `Cursor` into a list.
 
                             #### Loading with Content Providers
 
-Instead of using the underlying SQLite database directly, we can instead expose the ActiveAndroid data as a content provider with a few simple additions. First, override the default identity column for all ActiveAndroid models:
+Instead of using the underlying SQLite database directly, we can instead expose the Cupboard data as a content provider with a few simple additions. First, override the default identity column for all Cupboard models:
 
 ```java
 @Table(name = "Items", id = BaseColumns._ID)
@@ -251,22 +265,13 @@ You must also register the content provider in your AndroidManifest.xml:
 ```xml
 <application ...>
     <provider android:authorities="com.example" android:exported="false"    
-              android:name="com.activeandroid.content.ContentProvider" />
+              android:name="com.Cupboard.content.ContentProvider" />
     ...
 </application>
 ```
 
-See the full source code on the official [ActiveAndroid ContentProviders guide](https://github.com/pardom/ActiveAndroid/wiki/Using-the-content-provider).
+See the full source code on the official [Cupboard ContentProviders guide](https://github.com/pardom/Cupboard/wiki/Using-the-content-provider).
 
-                                                #### Official Reference Guides
-
-Check these official reference guides for more detailed information:
-
- * [Install ActiveAndroid and perform initial setup](https://github.com/pardom/ActiveAndroid/wiki/Getting-started)
- * [Define your application models](https://github.com/pardom/ActiveAndroid/wiki/Creating-your-database-model)
- * [Persist data using save](https://github.com/pardom/ActiveAndroid/wiki/Saving-to-the-database)
- * [Query the local database](https://github.com/pardom/ActiveAndroid/wiki/Querying-the-database)
- * [Perform data schema migrations](https://github.com/pardom/ActiveAndroid/wiki/Schema-migrations)
 
 Be sure to review the common questions below.
 
@@ -284,31 +289,12 @@ The type is inferred automatically from the type of the field.
 
 > Question: How do you represent a 1-1 relationship?
 
-This is a good one to note. common use case that you're not sure of yet with cupboard.
-
-<!-- 
-Check out the [relationships section](https://github.com/pardom/ActiveAndroid/wiki/Creating-your-database-model#relationships) if you haven't yet. There are many ways to manage this. You can declare a type "User" and then that field will be associated with a [foreign key representing the user](https://github.com/pardom/ActiveAndroid/blob/master/src/com/activeandroid/Model.java#L135). 
-
-```java
-public class User extends Model {
-  public String email;
-  public Address address;
-}
-```
-
-You can manage this process by simply constructing and assigning the user object to a field of the parent object and then calling save on the parent. 
-
-```java
-User u = new User("bob@foo.com");
-u.address = new Address("135 Hesby St, Los Angeles, CA");
-u.address.save();
-u.save();
-``` -->
+Cupboard is not a real ORM as it doesn't manage relations between objects, which keeps things simple.
 
 > Question: How do I delete all the records from a table?
 
 
-> Question: Is it possible to do joins with ActiveAndroid? 
+> Question: Is it possible to do joins with Cupboard? 
 
 
 > Question: What are the best practices when interacting with the sqlite in Android, is ORM/DAO the way to go?
@@ -317,7 +303,7 @@ u.save();
 ## References
 
 * [Cupboard bitbucket](https://bitbucket.org/qbusict/cupboard)
-* [AA Getting Started](https://github.com/pardom/ActiveAndroid/wiki/Getting-started)
-* [AA Models](https://github.com/pardom/ActiveAndroid/wiki/Creating-your-database-model)
-* [AA Saving](https://github.com/pardom/ActiveAndroid/wiki/Saving-to-the-database)
+* [AA Getting Started](https://github.com/pardom/Cupboard/wiki/Getting-started)
+* [AA Models](https://github.com/pardom/Cupboard/wiki/Creating-your-database-model)
+* [AA Saving](https://github.com/pardom/Cupboard/wiki/Saving-to-the-database)
 * [Cupboard talk] (https://skillsmatter.com/skillscasts/4806-simple-persistence-with-cupboard)
