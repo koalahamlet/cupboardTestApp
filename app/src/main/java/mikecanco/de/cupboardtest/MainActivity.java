@@ -4,16 +4,17 @@ import android.app.Activity;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import nl.qbusict.cupboard.QueryResultIterable;
 
@@ -44,26 +45,44 @@ public class MainActivity extends Activity {
 
         // setup database
         PracticeDatabaseHelper dbHelper = new PracticeDatabaseHelper(this);
+        dbHelper.onUpgrade(dbHelper.getWritableDatabase(), 1, 2);
         db = dbHelper.getWritableDatabase();
+
 
         // here is where you associate the name array.
         //TODO: make sure name array is populated!
         bunnyNameArray = getAllBunniesNames();
-        bunnyAdapter = new ArrayAdapter<String>(getBaseContext(), android.R.layout.simple_list_item_1, bunnyNameArray);
+//        bunnyAdapter = new ArrayAdapter<String>(getBaseContext(), android.R.layout.simple_list_item_2, bunnyNameArray);
+
+        bunnyAdapter = new ArrayAdapter(getBaseContext(), android.R.layout.simple_list_item_2, android.R.id.text1, bunnyNameArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = (TextView) view.findViewById(android.R.id.text1);
+                TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+
+                text1.setText("This bunny is named: "+bunnyArray.get(position).getName());
+                text2.setText("It is a "+bunnyArray.get(position).getCutenessTypeEnum()+" bunny");
+                return view;
+            }
+        };
 
         btnAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String s = etBunnyName.getText().toString();
-                if(!s.isEmpty()){
+                if (!s.isEmpty()) {
 
-                    Integer cute= (int) ((long)new Random(100).nextLong());
-                    Bunny b = new Bunny(s, cute);
+
+
+                    Bunny b = new Bunny(s);
                     cupboard().withDatabase(db).put(b);
+                    bunnyArray.add(b);
                     bunnyAdapter.add(b.getName());
                     bunnyAdapter.notifyDataSetChanged();
-                }
-                else {
+                    // empty the edit text
+                    etBunnyName.setText("");
+                } else {
                     Toast.makeText(getApplicationContext(), "no empty bunnies", Toast.LENGTH_SHORT).show();
                 }
 
@@ -75,8 +94,9 @@ public class MainActivity extends Activity {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int pos, long l) {
 
-                String name = (String) lvBunnies.getItemAtPosition(pos);
-                cupboard().withDatabase(db).delete(Bunny.class, "name = ?", name);
+                Bunny b = bunnyArray.get(pos);
+                cupboard().withDatabase(db).delete(Bunny.class, b.get_id());
+                bunnyArray.remove(pos);
                 bunnyNameArray.remove(pos);
                 bunnyAdapter.notifyDataSetChanged();
 
@@ -100,37 +120,13 @@ public class MainActivity extends Activity {
         return bunnies;
     }
 
-    public static ArrayList<String> getAllBunniesNames() {
+    public ArrayList<String> getAllBunniesNames() {
         final QueryResultIterable<Bunny> iter = cupboard().withDatabase(db).query(Bunny.class).query();
-        List<Bunny> bunnies = getListFromQueryResultIterator(iter);
+        bunnyArray = (ArrayList<Bunny>) getListFromQueryResultIterator(iter);
         ArrayList<String> bunnyNameArray = new ArrayList<String>();
-        for (Bunny b: bunnies){
+        for (Bunny b : bunnyArray) {
             bunnyNameArray.add(b.getName());
         }
         return bunnyNameArray;
     }
-
-
-//    private static DatabaseCompartment.QueryBuilder<Bunny> getQueryBuilder() {
-//        return cupboard().withDatabase(db).query(Bunny.class);
-//    }
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.main, menu);
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//        return super.onOptionsItemSelected(item);
-//    }
 }

@@ -8,6 +8,12 @@ public class Bunny {
     public Long _id; // for cupboard
     public String name; // bunny name
     public Integer cuteValue ; // bunny cuteness
+    public Integer uglyValue ; // bunny ugly
+
+    public Enum<cutenessType> getCutenessTypeEnum() {
+        return cutenessTypeEnum;
+    }
+
     public Enum<cutenessType> cutenessTypeEnum;
 
     public Bunny() {
@@ -15,9 +21,10 @@ public class Bunny {
         this.cuteValue = 0;
         this.cutenessTypeEnum = cutenessType.UGLY;
     }
-    public Bunny(String name, Integer cuteValue) {
+    public Bunny(String name) {
         this.name = name;
-        this.cuteValue = cuteValue;
+        this.cuteValue = (int) (Math.random() * 100);;
+
         if (cuteValue < 44) {
             cutenessTypeEnum = cutenessType.UGLY;
         }
@@ -34,11 +41,9 @@ public class Bunny {
     }
 
     public static enum cutenessType {
-        UGLY("ugly"), CUTE("cute"), VERYCUTE("Very cute"), SOCUTEICOULDDIE("ZOMG SO CUTE asdfljasdflklkj");
-        String text;
-        cutenessType(String text) {
-            this.text = text;
-        }
+        UGLY, CUTE, VERYCUTE, SOCUTEICOULDDIE;
+
+
     }
 
     public String getName() {

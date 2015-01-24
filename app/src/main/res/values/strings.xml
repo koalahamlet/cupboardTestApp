@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">cupboardTest</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="hint">enter bunny name here</string>
     <string name="action_settings">Settings</string>
 
 </resources>

@@ -21,7 +21,7 @@
     <EditText
         android:id="@+id/edit_text"
         android:layout_width="wrap_content"
-        android:hint="@string/app_name"
+        android:hint="@string/hint"
         android:layout_height="wrap_content"
         android:layout_alignEnd="@+id/button2"
         android:layout_alignParentRight="true"/>
