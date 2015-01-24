@@ -44,7 +44,7 @@ You should now have ahold of the files you need for Cupboard.
 
 ### Configuration
 
-Next, we'll setup a custom SQLiteOpenHelper. This is a standard object in the Android framework that assists in dealing with SQLite databases. For now, we'll just create the object and register one POJO in our database: `Bunny`
+Next, we'll setup a custom SQLiteOpenHelper. This is a standard object in the Android framework that assists in dealing with SQLite databases. For now, we'll just create the object and register one Plain Old Java Object (POJO) in our database: `Bunny`
 ```java
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -91,19 +91,45 @@ After this, somewhere in your app where you want to use Cupboard, you will have 
 PracticeDatabaseHelper dbHelper = new PracticeDatabaseHelper(this);
 db = dbHelper.getWritableDatabase();
 ```
-Now, with your database instantiated, you are ready to use Cupboard. 
 
-                                                ### Usage
+Now, with your database instantiated, you are ready to use Cupboard.
 
-                            #### Defining Models
+### Usage
 
-First, we define our models by...
+#### Defining Models
+
+First, we define our models by creating POJO's to represent them. However, a POJO for cupboard must always contain a variable of type `Long` called `_id`. This will serve as the index for the pojo within the SQLite table. 
 
 ```java
+public class Bunny {
 
+    public Long _id; // for cupboard
+    public String name; // bunny name
+    public Integer cuteValue ; // bunny cuteness
+
+
+    public Bunny() {
+        this.name = "noName";
+        this.cuteValue = 0;
+    }
+
+    public Bunny(String name, Integer cuteValue) {
+        this.name = name;
+        this.cuteValue = cuteValue;
+    }
+}
 ```
 
-The "name" part of the annotations refers to the name the Table or Columns will be given, so make sure to use the SQLite naming conventions for those. Also note that **Cupboard creates a local id (Id)** in addition to our manually managed `remoteId` (unique) which is the id on the server (for networked applications). To access that primary key Id, you can call `getId()` on an instance of your model.
+The name part of the class will be the name of the Table and the names of the variables will be those of the Columns, so make sure to use the SQLite naming conventions for those.
+
+Then, as seen above in setting up the database, you must register the class in your DatabaseHelper's static constructor. 
+
+```java
+    static {
+        // register our models
+        cupboard().register(Bunny.class);
+    }
+```
 
 #### CRUD Operations
 
@@ -111,55 +137,74 @@ The "name" part of the annotations refers to the name the Table or Columns will 
 
 Now we can create, modify and delete records for these models backed by SQLite:
 
+#####Create items
 ```java
-// Create a category
-Category restaurants = new Category();
-restaurants.remoteId = 1;
-restaurants.name = "Restaurants";
-restaurants.save();
+// Create a Bunny
+Bunny bunny = ...
+long id = cupboard().withDatabase(db).put(bunny);
+```
+If Bunny has it's _id field set, then any existing Bunny with that id will be replaced. If _id is null then a new Bunny will be created in the table. In both cases the corresponding id is returned from put().
 
-// Create an item 
-Item item = new Item();
-item.remoteId = 1;
-item.category = restaurants;
-item.name = "Outback Steakhouse";
-item.save();
+#####Read items
 
-// Deleting items
-Item item = Item.load(Item.class, 1);
-item.delete();
-// or with
-new Delete().from(Item.class).where("remote_id = ?", 1).execute();
+We can query records with a simple query syntax `get` method.
+
+```java
+Bunny bunny = cupboard().withDatabase(db).get(Bunny.class, 12L);
 ```
 
-                            #### Querying Records
+This will return the bunny with _id = 12. If no such bunny exists, then it will return null. 
 
-We can query records with a simple query syntax `get` method....
+We can also use the `get` command.
+```java
+// get the first bunny in the result
+Bunny bunny = cupboard().withDatabase(db).query(Bunny.class).get();
+// Get the cursor for this query
+Cursor bunnies = cupboard().withDatabase(db).query(Bunny.class).getCursor();
+try {
+  // Iterate Bunnys
+  QueryResultIterable<Bunny> itr = cupboard().withDatabase(db).query(Bunny.class).iterate();
+  for (Bunny bunny : itr) {
+    // do something with bunny
+  }
+} finally {
+  // close the cursor
+  itr.close();
+}
+// Get the first matching Bunny with name Max
+Bunny bunny = cupboard().withDatabase(db).query(Bunny.class).withSelection( "name = ?", "Max").get();
+```
+
+#####Update items
+
+To update an item, simply retrieve it from the database, update it's accessible fields, and use `put()` to get it back into the database
 
 ```java
+cupboard().withDatabase(db).put(b);
+```
 
+However, if you're doing a larger update of items, you can use the `update()` command. This is done with a [ContentValues](http://developer.android.com/reference/android/content/ContentValues.html) object.
+
+```java
+//Let's consider the problem in which we've forgotten to capitalize the 'M' in all bunnies named 'Max'
+ContentValues values = new ContentValues(1);
+values.put("name", "Max")
+// update all books where the title is 'android'
+cupboard().withDatabase(db).update(Book.class, values, "name = ?", "max");
+```
+
+#####Delete items
+```java
+// Delete an item, in this case the item where _id = 12
+cupboard().withDatabase(db).delete(Bunny.class, 12L);
+
+// by passing in the item
+cupboard().withDatabase(db).delete(bunny);
+// or by passing in a query. This will delete all bunnies named "Max"
+cupboard().withDatabase(db).delete(Bunny.class, "name = ?", "Max");
 ```
 
 That's Cupboard in a nutshell. 
-
-                            #### Executing Custom SQL
-
-To run custom SQL with no need for a result, use the `SQLiteUtils.execSql` method:
-
-```java
-// Note nothing is returned from this
-SQLiteUtils.execSql("DELETE FROM table_name");
-```
-
-If you need to execute a custom query and want to get a `List` of items back use `SQLiteUtils.rawQuery`:
-
-```java
-List<TodoItem> importantItems = 
-  SQLiteUtils.rawQuery(TodoItem.class, 
-     "SELECT * from todo_items where priority = ?", 
-     new String[] { "high" });
-```
-
 
 
                             #### Migrations
