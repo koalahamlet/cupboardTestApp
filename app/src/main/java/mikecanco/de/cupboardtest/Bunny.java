@@ -23,7 +23,7 @@ public class Bunny {
     }
     public Bunny(String name) {
         this.name = name;
-        this.cuteValue = (int) (Math.random() * 100);;
+        this.cuteValue = (int) (Math.random() * 100);
 
         if (cuteValue < 44) {
             cutenessTypeEnum = cutenessType.UGLY;
