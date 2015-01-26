@@ -1,21 +1,15 @@
-# cupboardTestApp
-A test app I have written to demonstrate how to use the cupboard SQLite helper for android
-
 Cupboard guide for CodePath
 ## Overview
 
-Cupboard is a way to manage persistence in a sqlite instance for your app. It's a small library, simple to use, and it was designed specifically for Android unlike ORMlite.
+Cupboard is a way to manage persistence in a sqlite instance for your app. It was written by [Hugo Visser] (https://twitter.com/botteaap). His talk on the library can be found [here](https://skillsmatter.com/skillscasts/4806-simple-persistence-with-cupboard). It's a small library, simple to use, and it was designed specifically for Android unlike ORMlite.
 
 Using the Cupboard persistence library makes managing client-side models extremely easy in simple cases. For more advanced or custom cases, you can use [[SQLiteOpenHelper|Local-Databases-with-SQLiteOpenHelper]] to manage the database communication directly. However, keep in mind that Cupboard was written with the intention to abstract away a lot of boilerplate and reused code that would go into making SQLiteOpenHelper function. 
 
-<img src="include some picture here" width="500" alt="orm" />
+Cupboard works like an **Object Relational Mapper**(ORM) by mapping java classes to database tables and mapping java class member variables to the table columns. Through this process, **each table** maps to a **Java model** and **the columns** in the table represent the respective **data fields**. Similarly, each row in the database represents a particular object. This allows us to create, modify, delete and query our SQLite database using instantiated objects instead of writing SQL every time.
 
-<!-- Note that while this library does not enforce the DOA model, we are going to leverage it regardless as it adds to overall code clarity.  -->
+For example, a "Tweet" model would be mapped to a "Tweet" table in the database. The Tweet model might have a "body" field that maps to a body column in the table and a "timestamp" field that maps to a timestamp column. Through this process, each row would map to a particular tweet. 
 
-<!-- 
-Cupboard works like an **Object Relational Mapper** by mapping java classes to database tables and mapping java class member variables to the table columns. Through this process, **each table** maps to a **Java model** and **the columns** in the table represent the respective **data fields**. Similarly, each row in the database represents a particular object. This allows us to create, modify, delete and query our SQLite database using model objects instead of raw SQL.
-
-For example, a "Tweet" model would be mapped to a "tweets" table in the database. The Tweet model might have a "body" field that maps to a body column in the table and a "timestamp" field that maps to a timestamp column. Through this process, each row would map to a particular tweet. -->
+However, it is not a true ORM as it does not support relating one object to a nested object. 
 
 ### Installation
 
@@ -83,10 +77,9 @@ public class PracticeDatabaseHelper extends SQLiteOpenHelper {
     }
 
 }
-
 ```
 
-After this, somewhere in your app where you want to use Cupboard, you will have to instantiate your DatabaseHelper. 
+After this, somewhere in your app(most likely your Application class or your Main Activity), you will have to instantiate your DatabaseHelper. 
 ```java
 PracticeDatabaseHelper dbHelper = new PracticeDatabaseHelper(this);
 db = dbHelper.getWritableDatabase();
@@ -132,8 +125,6 @@ Then, as seen above in setting up the database, you must register the class in y
 ```
 
 #### CRUD Operations
-
-(this section needs to be longer for cupboard)
 
 Now we can create, modify and delete records for these models backed by SQLite:
 
@@ -229,7 +220,7 @@ If you need to add a field to your an existing model, you'll need to write a mig
   ```
 
 Note that in order trigger the migration script, you’ll have to save an instance of your model somewhere in your code. 
-
+<!-- 
 #### Populating ListView with CursorAdapter
 
 Review this [[Custom CursorAdapter and ListViews|Populating a ListView with a CursorAdapter]] guide in order to load content from a `Cursor` into a `ListView`. In summary, in order to populate a `ListView` directly from the content within the Cupboard SQLite database, we can define this method on the model to retrieve a `Cursor` for the result set:
@@ -267,7 +258,7 @@ Next, we can fetch the data cursor containing all todo items with `TodoItem.fetc
 ```
 
 That's all we have to do to load data from Cupboard directly through a `Cursor` into a list.
-
+ -->
                             #### Loading with Content Providers
 
 Instead of using the underlying SQLite database directly, we can instead expose the Cupboard data as a content provider with a few simple additions. First, override the default identity column for all Cupboard models:

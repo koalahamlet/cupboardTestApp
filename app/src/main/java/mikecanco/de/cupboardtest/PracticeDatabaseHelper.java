@@ -36,6 +36,12 @@ public class PracticeDatabaseHelper extends SQLiteOpenHelper {
         cupboard().withDatabase(db).upgradeTables();
         // do migration work
 
+
+        if (newVersion == 2) {
+            db.beginTransaction();
+            db.insert("Bunny", )
+        }
+
     }
 
 }
