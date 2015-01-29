@@ -260,7 +260,7 @@ If you need to add a field to your an existing model or need to add a new model 
 ## Sample Project
 
 A sample project utilizing basic Cupboard CRUD functions and a migration schema has been constructed around this lesson. 
-[It can be found here](https://github.com/koalahamlet/cupboardTestApp).
+[It can be found here](https://github.com/koalahamlet/cupboardTestApp/tree/master/app/src/main).
 
 Be sure to review the common questions below.
 
