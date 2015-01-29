@@ -9,7 +9,7 @@ Cupboard works like an **Object Relational Mapper**(ORM) by mapping java classes
 
 For example, a "Tweet" model would be mapped to a "Tweet" table in the database. The Tweet model might have a "body" field that maps to a body column in the table and a "timestamp" field that maps to a timestamp column. Through this process, each row would map to a particular tweet. 
 
-However, it is not a true ORM as it does not support relating one object to a nested object. 
+However, it is not a true ORM as it does not support relating one object to a nested object inherently.
 
 ### Installation
 
@@ -123,6 +123,26 @@ Then, as seen above in setting up the database, you must register the class in y
         cupboard().register(Bunny.class);
     }
 ```
+##### Alternative names for columns and ignoring columns
+There exists two annotations available to you by default to help with how cupboard writes field names to columns in your database. 
+
+The first is `@Column()` and the second is '@Ignore()'
+
+The column annotation allows you to choose an alternative name for a column, while the ignore annotation tells cupboard to ignore a field while creating the table. 
+As an example, say I wanted to have the `cuteValue` field be underscore dilineated and for there to be a nonpersisted boolean `isAwake`. My Model code would now look like this:
+
+```java
+public class Bunny {
+
+    public Long _id; // for cupboard
+    public String name; // bunny name
+    @Column("cute_value")
+    public Integer cuteValue; // bunny cuteness
+    @Ignore
+    public Boolean isAwake;
+
+    ...
+```
 
 #### CRUD Operations
 
@@ -195,119 +215,52 @@ cupboard().withDatabase(db).delete(bunny);
 cupboard().withDatabase(db).delete(Bunny.class, "name = ?", "Max");
 ```
 
-That's Cupboard in a nutshell. 
+That's Cupboard in a nutshell.
 
 
-                            #### Migrations
+#### Migrations
 
-If you need to add a field to your an existing model, you'll need to write a migration to add the column to the table that represents your model. Here's how:
+
+If you need to add a field to your an existing model or need to add a new model to be tracked you have two options, you can either uninstall the app and then reinstall it with the new models and fields registered as you normally would, or you you'll need to write a migration to add the column to the table that represents your model. You'll need to write a migration if you've already deployed the app to production. It would be considered poor practice to ask users to uninstall your app before installing it once more. Here's how one might go about said migration:
 
 1. Add a new field to your existing model:
   ```java
+  public class Bunny {
+
+    public Long _id; // for cupboard
+    public String name; // bunny name
+    public String furColor; // new String to store fur color.
+    public Integer cuteValue ; // bunny cuteness
   
+  ...
   ```
 
 2. Change the database version the the AndroidManifest.xml's metadata. Increment by 1 from the last version:
 
   ```java
-
+  public class PracticeDatabaseHelper extends SQLiteOpenHelper {
+    private static final String DATABASE_NAME = "cupboardTest.db";
+    private static final int DATABASE_VERSION = 2;
+    ...
   ```
 
 3. Write your migration script. Name your script [newDatabaseVersion].sql, and place it in the directory [YourApp’sName]/app/src/main/assets/migrations. In my specific example, I’ll create the file [MyAppName]/app/src/main/assets/migrations/2.sql. (You might have to create the migrations directory yourself). You should write the SQLite script to add a column here:
 
-  ```sql
-  ALTER TABLE Items ADD COLUMN Priority TEXT;
+  ```java
+  public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        cupboard().withDatabase(db).upgradeTables();
+        if (newVersion == 2) {
+            ContentValues cv = new ContentValues();
+            cv.put("furColor", "black");
+            cupboard().withDatabase(db).update(Bunny.class, cv);
+        }
+  }
   ```
 
-Note that in order trigger the migration script, you’ll have to save an instance of your model somewhere in your code. 
-<!-- 
-#### Populating ListView with CursorAdapter
+## Sample Project
 
-Review this [[Custom CursorAdapter and ListViews|Populating a ListView with a CursorAdapter]] guide in order to load content from a `Cursor` into a `ListView`. In summary, in order to populate a `ListView` directly from the content within the Cupboard SQLite database, we can define this method on the model to retrieve a `Cursor` for the result set:
-
-```java
-public class TodoItem extends Model {
-    // ...
-
-    // Return cursor for result set for all todo items
-    public static Cursor fetchResultCursor() {
-        String tableName = Cache.getTableInfo(TodoItem.class).getTableName();
-        // Query all items without any conditions
-        String resultRecords = new Select(tableName + ".*, " + tableName + ".Id as _id").
-            from(TodoItem.class).toSql();
-        // Execute query on the underlying Cupboard SQLite database
-        Cursor resultCursor = Cache.openDatabase().rawQuery(resultRecords, null);
-        return resultCursor;
-    }
-}
-```
-
-We need to define a custom `TodoCursorAdapter` as [[outlined here|Populating-a-ListView-with-a-CursorAdapter#defining-the-adapter]] in order to define which XML template to use for the cursor rows and how to populate the template views with the relevant data. 
-
-Next, we can fetch the data cursor containing all todo items with `TodoItem.fetchResultCursor()` and populate the `ListView` using our custom `CursorAdapter`:
-
-```java
-// Find ListView to populate
-
-// Get data cursor
-
-// Setup cursor adapter
-
-// Attach cursor adapter to ListView 
-
-```
-
-That's all we have to do to load data from Cupboard directly through a `Cursor` into a list.
- -->
-                            #### Loading with Content Providers
-
-Instead of using the underlying SQLite database directly, we can instead expose the Cupboard data as a content provider with a few simple additions. First, override the default identity column for all Cupboard models:
-
-```java
-@Table(name = "Items", id = BaseColumns._ID)
-public class Item extends Model { ... }
-```
-
-Then you can use the [SimpleCursorAdapter](http://developer.android.com/reference/android/widget/SimpleCursorAdapter.html) to populate adapters using the underlying database directly:
-
-```java
-// Define a SimpleCursorAdapter loading the body into the TextView in simple_list_item_1
-SimpleCursorAdapter adapterTodo = new SimpleCursorAdapter(getActivity(),
-  android.R.layout.simple_list_item_1, null,
-  new String[] { "body" },
-  new int[] { android.R.id.text1 },
-  0);
-// Attach the simple adapter to the list
-myListView.setAdapter(adapterTodo);
-```
-
-You could also use [[a custom CursorAdapter|Populating a ListView with a CursorAdapter#defining-the-adapter]] instead for more flexibility. Next, we can load the data into the list using the content provider system through a `CursorLoader`:
-
-```java
-MyActivity.this.getSupportLoaderManager().initLoader(0, null, new LoaderCallbacks<Cursor>() {
-        @Override
-        public Loader<Cursor> onCreateLoader(int id, Bundle cursor) {
-            return new CursorLoader(MyActivity.this,
-                ContentProvider.createUri(TodoItem.class, null),
-                null, null, null, null
-            );
-        }
-        // ...
-});
-```
-
-You must also register the content provider in your AndroidManifest.xml:
-
-```xml
-<application ...>
-    <provider android:authorities="com.example" android:exported="false"    
-              android:name="com.Cupboard.content.ContentProvider" />
-    ...
-</application>
-```
-
-See the full source code on the official [Cupboard ContentProviders guide](https://github.com/pardom/Cupboard/wiki/Using-the-content-provider).
-
+A sample project utilizing basic Cupboard CRUD functions and a migration schema has been constructed around this lesson. 
+[It can be found here](https://github.com/koalahamlet/cupboardTestApp).
 
 Be sure to review the common questions below.
 
@@ -315,31 +268,52 @@ Be sure to review the common questions below.
 
 > Question: How does Cupboard handle duplicate IDs? For example, I want to make sure no duplicate twitter IDs are inserted. Is there a way to specify a column is the primary key in the model?
 
+The only way that cupboard knows if an object is the duplicate of another, by default, is if they share the same number in the _id field. 
 
-> Question: How do you specify the data type (int, text)?  Does Cupboard automatically know what the column type should be?
+However you can enable annotation support for `@Index` and `@CompositeIndex` like so
+
+```java
+Cupboard cupboard = new CupboardBuilder().useAnnotations().build();
+```
+
+For more information on the subject, refer to [the cupboard wiki entry on annotations](https://bitbucket.org/qbusict/cupboard/wiki/existingData)
+
+> Question: How do you specify the data type (int, text)? Does Cupboard automatically know what the column type should be?
 
 The type is inferred automatically from the type of the field.
 
 > Question: How do I store dates into Cupboard?
 
+Dates in Cupboard can be stored as Longs.
+
+```java
+long time = Calendar.getInstance().getTimeInMillis();
+```
+and then retrieved and displayed in whatever format you choose.
+
+```java
+String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+SimpleDateFormat sdf = new SimpleDateFormat(ISO_FORMAT);
+dateString = sdf.format(time);
+```
 
 > Question: How do you represent a 1-1 relationship?
 
 Cupboard is not a real ORM as it doesn't manage relations between objects, which keeps things simple.
+You can write a system with corresponding ID's if you wish to have this functionality.
 
 > Question: How do I delete all the records from a table?
 
-
-> Question: Is it possible to do joins with Cupboard? 
-
-
-> Question: What are the best practices when interacting with the sqlite in Android, is ORM/DAO the way to go?
-
+```java
+public static void clearAllBunnyData(db) {
+    db.execSQL("DELETE FROM " + Bunny.class.getSimpleName());
+}
+```
 
 ## References
 
 * [Cupboard bitbucket](https://bitbucket.org/qbusict/cupboard)
-* [AA Getting Started](https://github.com/pardom/Cupboard/wiki/Getting-started)
-* [AA Models](https://github.com/pardom/Cupboard/wiki/Creating-your-database-model)
-* [AA Saving](https://github.com/pardom/Cupboard/wiki/Saving-to-the-database)
+* [Cupboard Getting Started](https://bitbucket.org/qbusict/cupboard/wiki/GettingStarted)
+* [Cupboard working with annotations and existing data](https://bitbucket.org/qbusict/cupboard/wiki/existingData)
+* [Cupboard working with databases](https://bitbucket.org/qbusict/cupboard/wiki/withDatabase)
 * [Cupboard talk] (https://skillsmatter.com/skillscasts/4806-simple-persistence-with-cupboard)
