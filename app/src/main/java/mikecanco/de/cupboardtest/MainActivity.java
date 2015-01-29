@@ -20,7 +20,6 @@ import nl.qbusict.cupboard.QueryResultIterable;
 
 import static nl.qbusict.cupboard.CupboardFactory.cupboard;
 
-
 public class MainActivity extends Activity {
 
     static SQLiteDatabase db;
@@ -48,11 +47,8 @@ public class MainActivity extends Activity {
         dbHelper.onUpgrade(dbHelper.getWritableDatabase(), 1, 2);
         db = dbHelper.getWritableDatabase();
 
-
         // here is where you associate the name array.
-        //TODO: make sure name array is populated!
         bunnyNameArray = getAllBunniesNames();
-//        bunnyAdapter = new ArrayAdapter<String>(getBaseContext(), android.R.layout.simple_list_item_2, bunnyNameArray);
 
         bunnyAdapter = new ArrayAdapter(getBaseContext(), android.R.layout.simple_list_item_2, android.R.id.text1, bunnyNameArray) {
             @Override
@@ -67,14 +63,12 @@ public class MainActivity extends Activity {
             }
         };
 
+        // clicking this button adds a new bunny with your chosen name to the database
         btnAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String s = etBunnyName.getText().toString();
                 if (!s.isEmpty()) {
-
-
-
                     Bunny b = new Bunny(s);
                     cupboard().withDatabase(db).put(b);
                     bunnyArray.add(b);
@@ -90,6 +84,8 @@ public class MainActivity extends Activity {
         });
 
         lvBunnies.setAdapter(bunnyAdapter);
+
+        // long clicking on a list item will remove the bunny from the list AND from the db
         lvBunnies.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int pos, long l) {
@@ -103,6 +99,22 @@ public class MainActivity extends Activity {
                 return false;
             }
         });
+
+        //clicking on the bunny updates their cuteness value to VERYCUTE and persists that change
+        lvBunnies.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
+
+                // as an example of updating a value, and persisting it back to the db
+                Bunny b = bunnyArray.get(pos);
+                b.setCuteValue(85);
+                b.setCutenessTypeEnum(Bunny.cutenessType.VERYCUTE);
+                cupboard().withDatabase(db).put(b);
+                bunnyAdapter.notifyDataSetChanged();
+            }
+        });
+
+        getListOfVeryCuteBunniesNamedSteve();
 
     }
 
@@ -123,10 +135,23 @@ public class MainActivity extends Activity {
     public ArrayList<String> getAllBunniesNames() {
         final QueryResultIterable<Bunny> iter = cupboard().withDatabase(db).query(Bunny.class).query();
         bunnyArray = (ArrayList<Bunny>) getListFromQueryResultIterator(iter);
+
         ArrayList<String> bunnyNameArray = new ArrayList<String>();
         for (Bunny b : bunnyArray) {
             bunnyNameArray.add(b.getName());
         }
+
         return bunnyNameArray;
+    }
+
+    // this is an example method demonstrating how one would query cupboard for a specific subset
+    // of objects. In this case, very cute bunnies named steve.
+    public static List<Bunny> getListOfVeryCuteBunniesNamedSteve() {
+        String selectionString = "name='steve' AND cuteValue > 66";
+//        Long time = Calendar.getInstance().getTimeInMillis();
+        QueryResultIterable<Bunny> iterable =
+                cupboard().withDatabase(db).query(Bunny.class).withSelection(selectionString).query();
+        List<Bunny> list = getListFromQueryResultIterator(iterable);
+        return list;
     }
 }

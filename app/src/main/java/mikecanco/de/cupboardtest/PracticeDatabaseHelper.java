@@ -1,12 +1,12 @@
 package mikecanco.de.cupboardtest;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
 import static nl.qbusict.cupboard.CupboardFactory.cupboard;
-/**
- * Created by koalahamlet on 1/20/15.
- */
+
 public class PracticeDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "cupboardTest.db";
@@ -31,15 +31,15 @@ public class PracticeDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // this will upgrade tables, adding columns and new tables.
-        // Note that existing columns will not be converted
+        // this line  will upgrade your database, adding columns and new tables.
+        // Note that existing columns will not be converted from what they originally were
         cupboard().withDatabase(db).upgradeTables();
-        // do migration work
 
-
+        // If version upgrading from version 1 to 2, lets initialize the furColor column to be orange
         if (newVersion == 2) {
-            db.beginTransaction();
-            db.insert("Bunny", )
+            ContentValues cv = new ContentValues();
+            cv.put("furColor", "black");
+            cupboard().withDatabase(db).update(Bunny.class, cv);
         }
 
     }

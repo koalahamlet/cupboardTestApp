@@ -1,18 +1,13 @@
 package mikecanco.de.cupboardtest;
 
-/**
- * Created by koalahamlet on 1/20/15.
- */
 public class Bunny {
 
     public Long _id; // for cupboard
     public String name; // bunny name
-    public Integer cuteValue ; // bunny cuteness
-    public Integer uglyValue ; // bunny ugly
+    public Integer cuteValue; // bunny cuteness
+    //public String furColor; // new String to be added for db version 2
 
-    public Enum<cutenessType> getCutenessTypeEnum() {
-        return cutenessTypeEnum;
-    }
+
 
     public Enum<cutenessType> cutenessTypeEnum;
 
@@ -42,8 +37,14 @@ public class Bunny {
 
     public static enum cutenessType {
         UGLY, CUTE, VERYCUTE, SOCUTEICOULDDIE;
+    }
 
+    public Enum<cutenessType> getCutenessTypeEnum() {
+        return cutenessTypeEnum;
+    }
 
+    public void setCutenessTypeEnum(Enum<cutenessType> cutenessTypeEnum) {
+        this.cutenessTypeEnum = cutenessTypeEnum;
     }
 
     public String getName() {
