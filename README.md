@@ -1,4 +1,3 @@
-Cupboard guide for CodePath
 ## Overview
 
 Cupboard is a way to manage persistence in a sqlite instance for your app. It was written by [Hugo Visser] (https://twitter.com/botteaap). His talk on the library can be found [here](https://skillsmatter.com/skillscasts/4806-simple-persistence-with-cupboard). It's a small library, simple to use, and it was designed specifically for Android unlike ORMlite.
@@ -126,10 +125,10 @@ Then, as seen above in setting up the database, you must register the class in y
 ##### Alternative names for columns and ignoring columns
 There exists two annotations available to you by default to help with how cupboard writes field names to columns in your database. 
 
-The first is `@Column()` and the second is '@Ignore()'
+The first is `@Column()` and the second is `@Ignore()`
 
 The column annotation allows you to choose an alternative name for a column, while the ignore annotation tells cupboard to ignore a field while creating the table. 
-As an example, say I wanted to have the `cuteValue` field be underscore dilineated and for there to be a nonpersisted boolean `isAwake`. My Model code would now look like this:
+As an example, say I wanted to have the `cuteValue` field be underscore delineated and for there to be a non-persisted boolean `isAwake`. My Model code would now look like this:
 
 ```java
 public class Bunny {
@@ -244,11 +243,15 @@ If you need to add a field to your an existing model or need to add a new model 
     ...
   ```
 
-3. Write your migration script. Name your script [newDatabaseVersion].sql, and place it in the directory [YourApp’sName]/app/src/main/assets/migrations. In my specific example, I’ll create the file [MyAppName]/app/src/main/assets/migrations/2.sql. (You might have to create the migrations directory yourself). You should write the SQLite script to add a column here:
+3. Write your migration script. You'll have to keep in mind all possibilities for migrations, e.g. are they migrating from version 1 to 3, 2 to 3, etc.
 
   ```java
   public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // This line adds new columns and tables from changes you've made in new or existing
+        // registered models. 
         cupboard().withDatabase(db).upgradeTables();
+
+        // After this, you can populate the new Columns or tables with default values if you choose
         if (newVersion == 2) {
             ContentValues cv = new ContentValues();
             cv.put("furColor", "black");
